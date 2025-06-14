@@ -1,0 +1,17 @@
+body { font-family: sans-serif; padding: 1rem; }
+nav a, nav button { margin-right: .5rem; }
+.card {
+  border: 1px solid #ccc;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+}
+.msg { margin-top:.5rem; color: green; }
+.msg.error { color: red; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
+  gap: 1rem;
+}
+.producto button { margin-right:.3rem; }
+.filtros label { margin-right: 1rem; }
