@@ -7,7 +7,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Conexión global
+# Conexión al pool de Postgres
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
     'postgresql://postgres:223013@localhost:5432/railway'
@@ -22,25 +22,21 @@ def query(sql, params=(), fetchone=False, commit=False):
         if sql.strip().upper().startswith("SELECT"):
             return cur.fetchone() if fetchone else cur.fetchall()
 
-
 @app.route('/api/health')
 def health():
     return jsonify(status='ok')
 
-
 @app.route('/api/register', methods=['POST'])
 def register():
-    data = request.json or {}
+    data = request.get_json() or {}
     nombre   = data.get('nombre','').strip()
     email    = data.get('email','').strip().lower()
     password = data.get('password','')
-
     if not (nombre and email and password):
         return jsonify(error="Todos los campos son obligatorios"), 400
 
-    # Hasheamos la contraseña
+    # Hasheo de contraseña
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
     try:
         query(
             "INSERT INTO usuario(nombre,email,password) VALUES (%s,%s,%s)",
@@ -52,13 +48,11 @@ def register():
 
     return jsonify(message="Usuario creado correctamente"), 201
 
-
 @app.route('/api/login', methods=['POST'])
 def login():
-    data = request.json or {}
+    data = request.get_json() or {}
     email    = data.get('email','').strip().lower()
     password = data.get('password','')
-
     if not (email and password):
         return jsonify(error="Email y contraseña son obligatorios"), 400
 
@@ -71,13 +65,10 @@ def login():
         return jsonify(error="Usuario no encontrado"), 404
 
     user_id, hashed = row
-    # Verificamos el hash
     if not bcrypt.checkpw(password.encode(), hashed.encode()):
         return jsonify(error="Credenciales inválidas"), 401
 
-    # Aquí podrías generar un JWT o una sesión…
     return jsonify(message="Autenticación exitosa", user_id=user_id), 200
-
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
