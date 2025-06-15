@@ -6,8 +6,12 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Usa la URL de Railway para conectar a Postgres
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['postgresql://postgres:lVsVGwRexetgAAVvDdHdrXMmubfGFqkY@postgres.railway.internal:5432/railway']
+# Leemos la URL de conexión desde la variable DATABASE_URL
+db_url = os.environ.get('DATABASE_URL')
+if not db_url:
+    raise RuntimeError("La variable de entorno DATABASE_URL no está definida")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -25,7 +29,7 @@ def health():
     return jsonify(status='ok')
 
 if __name__ == '__main__':
-    # Si no usas Flask-Migrate, crea las tablas al arrancar:
+    # Crea las tablas si no existen
     with app.app_context():
         db.create_all()
     app.run(host='0.0.0.0', debug=True)
