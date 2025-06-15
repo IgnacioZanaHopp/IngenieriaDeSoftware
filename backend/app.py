@@ -1,15 +1,31 @@
-from flask import Flask, jsonify, request
+import os
+from flask import Flask, jsonify
+from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Permite llamadas desde tu React
+CORS(app)
+
+# Usa la URL de Railway para conectar a Postgres
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['postgresql://postgres:lVsVGwRexetgAAVvDdHdrXMmubfGFqkY@postgres.railway.internal:5432/railway']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# Ejemplo de modelo
+class Cliente(db.Model):
+    id       = db.Column(db.Integer, primary_key=True)
+    nombre   = db.Column(db.String(100), nullable=False)
+    email    = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
 
 # Ruta de prueba
-@app.route("/api/health", methods=["GET"])
+@app.route('/api/health')
 def health():
-    return jsonify({"status": "ok"})
+    return jsonify(status='ok')
 
-# Aquí agregarás tus endpoints: /register, /login, /products, /purchase, etc.
-
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
+if __name__ == '__main__':
+    # Si no usas Flask-Migrate, crea las tablas al arrancar:
+    with app.app_context():
+        db.create_all()
+    app.run(host='0.0.0.0', debug=True)
