@@ -12,9 +12,7 @@ DATABASE_URL = os.environ.get(
     'DATABASE_URL',
     'postgresql://postgres:223013@localhost:5432/railway'
 )
-conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-
-
+conn = psycopg2.connect(DATABASE_URL)
 
 def query(sql, params=(), fetchone=False, commit=False):
     with conn.cursor() as cur:
