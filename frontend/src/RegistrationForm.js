@@ -13,11 +13,16 @@ export default function RegistrationForm({ api }) {
 
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setMsg({ text:'', type:'success' });
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
     // Validación cliente (antes de enviar)
+    if (!form.rut || !form.nombre || !form.apellido || !form.email || !form.password) {
+      setMsg({ text: 'Completa todos los campos', type: 'error' });
+      return;
+    }
     if (form.password !== form.passwordConfirm) {
       setMsg({ text: 'Las contraseñas no coinciden', type: 'error' });
       return;
@@ -31,7 +36,7 @@ export default function RegistrationForm({ api }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Error al registrar');
-      setMsg({ text: 'Registrado con éxito 🎉 Inicia sesión.', type: 'success' });
+      setMsg({ text: data.message || 'Registrado con éxito 🎉 Inicia sesión.', type: 'success' });
     } catch (err) {
       setMsg({ text: err.message, type: 'error' });
     }

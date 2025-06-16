@@ -1,11 +1,16 @@
 import os
 import psycopg2
 import bcrypt
+import jwt
+from datetime import datetime, timedelta
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+
+# Clave secreta para JWT
+JWT_SECRET = os.environ.get('JWT_SECRET', 'changeme')
 
 # ------------------------------------------------------------------
 #  Conexión a Postgres (local o Railway)
@@ -34,8 +39,62 @@ def query(sql, params=(), fetchone=False, commit=False):
 def health():
     return jsonify(status='ok')
 
-# UC-07: Registro (ya implementado)
-# UC-08: Login     (ya implementado)
+# UC-07: Registro
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.get_json() or {}
+    rut      = data.get('rut', '').strip()
+    nombre   = data.get('nombre', '').strip()
+    apellido = data.get('apellido', '').strip()
+    email    = data.get('email', '').strip().lower()
+    password = data.get('password')
+
+    if not all([rut, nombre, apellido, email, password]):
+        return jsonify(message='Todos los campos son obligatorios'), 400
+
+    existing = query(
+        'SELECT id FROM usuario WHERE email=%s',
+        (email,), fetchone=True
+    )
+    if existing:
+        return jsonify(message='Email ya registrado'), 400
+
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    query(
+        'INSERT INTO usuario (rut,nombre,apellido,email,contrasena,role) '
+        'VALUES (%s,%s,%s,%s,%s,%s)',
+        (rut, nombre, apellido, email, hashed, 'user'),
+        commit=True
+    )
+    return jsonify(message='Registrado correctamente'), 201
+
+# UC-08: Login
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json() or {}
+    email    = data.get('email', '').strip().lower()
+    password = data.get('password') or ''
+
+    if not email or not password:
+        return jsonify(message='Email y contraseña son obligatorios'), 400
+
+    row = query(
+        'SELECT id, contrasena FROM usuario WHERE email=%s',
+        (email,), fetchone=True
+    )
+    if not row:
+        return jsonify(message='Credenciales inválidas'), 401
+
+    user_id, hashed = row
+    if not bcrypt.checkpw(password.encode(), hashed.encode()):
+        return jsonify(message='Credenciales inválidas'), 401
+
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.utcnow() + timedelta(hours=24)
+    }
+    token = jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+    return jsonify(token=token)
 
 
 # UC-21: Compra → crear orden y actualizar stock
