@@ -1,53 +1,28 @@
-import React, { useState } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import RegistrationForm from './RegistrationForm';
-import LoginForm from './LoginForm';
+// src/App.js
+import React from 'react';
+import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import ProductCatalog from './ProductCatalog';
+import LoginForm from './LoginForm';
+import RegistrationForm from './RegistrationForm';
 import Receipt from './Receipt';
+import './styles.css';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const navigate = useNavigate();
-
-  const handleLogin = (jwt) => {
-    localStorage.setItem('token', jwt);
-    setToken(jwt);
-    navigate('/catalogo');
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    navigate('/login');
-  };
-
+export default function App() {
   return (
-    <div className="App">
-      <nav>
-        <Link to="/">Inicio</Link> |{' '}
-        {token
-          ? <>
-              <Link to="/catalogo">Catálogo</Link> | 
-              <button onClick={handleLogout}>Cerrar sesión</button>
-            </>
-          : <>
-              <Link to="/login">Login</Link> | 
-              <Link to="/registro">Registro</Link>
-            </>
-        }
+    <BrowserRouter>
+      <nav className="main-nav">
+        <NavLink to="/">Inicio</NavLink>
+        <NavLink to="/login">Login</NavLink>
+        <NavLink to="/register">Registro</NavLink>
       </nav>
-
-      <Routes>
-        <Route path="/" element={<h1>Bienvenido</h1>} />
-        <Route path="/registro" element={<RegistrationForm api={API} />} />
-        <Route path="/login" element={<LoginForm api={API} onLogin={handleLogin} />} />
-        <Route path="/catalogo" element={<ProductCatalog api={API} token={token} />} />
-        <Route path="/receipt/:orderId" element={<Receipt api={API} token={token} />} />
-      </Routes>
-    </div>
+      <main>
+        <Routes>
+          <Route path="/" element={<ProductCatalog />} />
+          <Route path="/login" element={<LoginForm />} />
+          <Route path="/register" element={<RegistrationForm />} />
+          <Route path="/recibo/:id" element={<Receipt />} />
+        </Routes>
+      </main>
+    </BrowserRouter>
   );
 }
-
-export default App;

@@ -1,55 +1,57 @@
+// src/RegistrationForm.js
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { API } from './api';
 
-export default function RegistrationForm({ api }) {
-  const [form, setForm] = useState({
-    rut: '',
-    nombre: '',
-    apellido: '',
-    email: '',
-    password: '',
-    passwordConfirm: ''
-  });
-  const [msg, setMsg] = useState({ text:'', type:'success' });
-
-  const handleChange = e => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+export default function RegistrationForm() {
+  const navigate = useNavigate();
+  const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = async e => {
     e.preventDefault();
-    // Validación cliente (antes de enviar)
-    if (form.password !== form.passwordConfirm) {
-      setMsg({ text: 'Las contraseñas no coinciden', type: 'error' });
-      return;
-    }
-    // Llamada al backend
     try {
-      const res = await fetch(`${api}/register`, {
+      const res = await fetch(`${API}/users`, {
         method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify(form),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email, password })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Error al registrar');
-      setMsg({ text: 'Registrado con éxito 🎉 Inicia sesión.', type: 'success' });
+      if (!res.ok) throw new Error('Registro fallido');
+      navigate('/login');
     } catch (err) {
-      setMsg({ text: err.message, type: 'error' });
+      setError(err.message);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="card">
+    <div className="form-container">
       <h2>Registro</h2>
-      <input name="rut"             placeholder="RUT"              onChange={handleChange} value={form.rut}            required />
-      <input name="nombre"          placeholder="Nombre"           onChange={handleChange} value={form.nombre}         required />
-      <input name="apellido"        placeholder="Apellido"         onChange={handleChange} value={form.apellido}       required />
-      <input name="email"           placeholder="Email"            type="email"      onChange={handleChange} value={form.email}          required />
-      <input name="password"        placeholder="Contraseña"       type="password"   onChange={handleChange} value={form.password}       required />
-      <input name="passwordConfirm" placeholder="Repite Contraseña" type="password"  onChange={handleChange} value={form.passwordConfirm}required />
-      <button type="submit">Crear cuenta</button>
-      {msg.text && (
-        <p className={`msg ${msg.type==='error'?'error':''}`}>{msg.text}</p>
-      )}
-    </form>
+      <form onSubmit={handleSubmit}>
+        <input
+          value={nombre}
+          onChange={e => setNombre(e.target.value)}
+          placeholder="Nombre"
+          required
+        />
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="Email"
+          required
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          placeholder="Password"
+          required
+        />
+        <button type="submit">Crear cuenta</button>
+      </form>
+      {error && <p className="error">{error}</p>}
+    </div>
   );
 }

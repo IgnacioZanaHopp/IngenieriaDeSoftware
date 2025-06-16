@@ -17,8 +17,9 @@ CORS(app)
 # ------------------------------------------------------------------
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
-    'postgresql://postgres:223013@localhost:5432/railway'
+    'postgresql://postgres:223013@localhost:5432/tienda'
 )
+# Abre la conexión
 conn = psycopg2.connect(DATABASE_URL)
 # ------------------------------------------------------------------
 
@@ -230,6 +231,23 @@ def update_permissions(user_id):
         return jsonify(error="Role inválido"), 400
     query("UPDATE usuario SET role=%s WHERE id=%s", (role, user_id), commit=True)
     return jsonify(message="Permisos actualizados"), 200
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    try:
+        conn = get_conn()           # tu función psycopg2.connect(DB_URL)
+        cur = conn.cursor()
+        cur.execute('SELECT 1;')
+        cur.fetchone()
+        cur.close()
+        conn.close()
+        return jsonify(status='ok', db='connected'), 200
+
+    except Exception as e:
+        # Aquí exponemos e para ver qué falla
+        return jsonify(status='error',
+                    db='disconnected',
+                    detail=str(e)), 500
 
 
 if __name__ == '__main__':

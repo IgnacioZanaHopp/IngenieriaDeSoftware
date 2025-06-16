@@ -1,58 +1,33 @@
 // src/Receipt.js
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { API } from './api';
 
-export default function Receipt({ api, token }) {
-  const { orderId } = useParams();
-  const [status, setStatus] = useState('loading'); // loading | ok | error_mail | error_general
-  const [pdfUrl, setPdfUrl] = useState('');
+export default function Receipt() {
+  const { id } = useParams();
+  const [order, setOrder] = useState(null);
 
   useEffect(() => {
-    // llamamos a nuestro endpoint que engloba UC-33
-    fetch(`${api}/receipt/${orderId}`, {
-      method: 'POST', // asume POST que dispara generación/envío
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    })
-      .then(async res => {
-        if (!res.ok) throw new Error('general');
-        const data = await res.json();
-        if (data.status === 'ok') {
-          setStatus('ok');
-        } else if (data.status === 'error_mail') {
-          // recibimos también la URL para descarga
-          setPdfUrl(data.pdfUrl);
-          setStatus('error_mail');
-        }
-      })
-      .catch(() => setStatus('error_general'));
-  }, [api, orderId, token]);
+    fetch(`${API}/orders/${id}`)
+      .then(res => res.json())
+      .then(setOrder)
+      .catch(console.error);
+  }, [id]);
 
-  if (status === 'loading') {
-    return <p>Generando y enviando tu boleta…</p>;
-  }
+  if (!order) return <p>Cargando recibo...</p>;
 
-  if (status === 'error_general') {
-    return <p className="msg error">Error interno, intenta más tarde.</p>;
-  }
-
-  if (status === 'ok') {
-    return <p className="msg success">¡Listo! Boleta enviada a tu correo.</p>;
-  }
-
-  // status === 'error_mail'
   return (
-    <div>
-      <p className="msg error">
-        Hubo un problema enviando el email. Puedes descargarla aquí:
-      </p>
-      {pdfUrl && (
-        <a href={pdfUrl} download={`boleta-${orderId}.pdf`}>
-          👉 Descargar PDF
-        </a>
-      )}
+    <div className="receipt">
+      <h2>Recibo #{order.id}</h2>
+      <p>Fecha: {new Date(order.fecha).toLocaleString()}</p>
+      <p>Total: ${order.total}</p>
+      <ul>
+        {order.items.map(item => (
+          <li key={item.id}>
+            {item.nombre} × {item.cantidad} = ${item.precio_unit * item.cantidad}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
