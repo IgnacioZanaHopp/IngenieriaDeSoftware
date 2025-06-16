@@ -7,13 +7,20 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Conexión a Postgres (local o Railway)
+# ------------------------------------------------------------------
+#  Conexión a Postgres (local o Railway)
+# 
+#  1. Si existe la variable de entorno DATABASE_URL (p.ej. en Railway),
+#     se usará ese valor.
+#  2. En caso contrario, se conectará a tu Postgres local con este DSN:
+#     postgresql://<usuario>:<pass>@localhost:5432/<tu_bd>
+# ------------------------------------------------------------------
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
     'postgresql://postgres:223013@localhost:5432/railway'
 )
 conn = psycopg2.connect(DATABASE_URL)
-
+# ------------------------------------------------------------------
 
 def query(sql, params=(), fetchone=False, commit=False):
     with conn.cursor() as cur:
@@ -23,11 +30,9 @@ def query(sql, params=(), fetchone=False, commit=False):
         if sql.strip().upper().startswith("SELECT"):
             return cur.fetchone() if fetchone else cur.fetchall()
 
-
 @app.route('/api/health')
 def health():
     return jsonify(status='ok')
-
 
 # UC-07: Registro (ya implementado)
 # UC-08: Login     (ya implementado)
