@@ -1,11 +1,10 @@
 // src/LoginForm.js
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// navegación se maneja en componente padre
 
 export default function LoginForm({ api, onLogin }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
-  const nav = useNavigate();
 
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -15,8 +14,8 @@ export default function LoginForm({ api, onLogin }) {
   const handleSubmit = async e => {
     e.preventDefault();
 
-    // A1: Validación de campos vacíos
-    if (!form.email || !form.password) {
+    // Validación de campos vacíos
+    if (!form.email.trim() || !form.password) {
       setError('Por favor completa todos los campos.');
       return;
     }
@@ -30,14 +29,12 @@ export default function LoginForm({ api, onLogin }) {
       const data = await res.json();
 
       if (!res.ok) {
-        // A2: Credenciales inválidas
         setError(data.message || 'Email o contraseña incorrectos.');
         return;
       }
 
-      // 5: Éxito → guardamos token y redirigimos
+      // Éxito → guardamos token y delegamos navegación
       onLogin(data.token);
-      nav('/');
     } catch (e) {
       // E1: Error interno
       setError('Error interno, intenta más tarde.');
